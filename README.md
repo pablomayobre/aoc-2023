@@ -1,55 +1,104 @@
-# ts-aoc-starter
+# Advent of Code Typescript
 
-## Getting Started
+## Setup
 
-```terminal
-npx create-ts-aoc-starter
+Firs you need to setup aoc-cli, it should be available globally and you need to have configured your session cookie.
+
+## Init
+Initialize a day with a very basic template, puzzle description and your data
+
+```shell
+npm run init -- 1
 ```
 
-This will create a new workspace in the current directory with the following structure:
+The command above would initialize day 1 with the following folder structure
 
-```file-tree
-ts-aoc-starter
-├── puzzles
-│   ├── day-1
-│   │   ├── day-1-a.data.txt
-│   │   ├── day-1-a.sample-data.txt
-│   │   ├── day-1-a.ts
-│   │   ├── day-1-b.data.txt
-│   │   ├── day-1-b.sample-data.txt
-│   │   └── day-1-b.ts
-│   ├── day-2
-│   ├── day-3
+```yaml
+puzzles
+ - day-1
+   - puzzle.md               # The puzzle description for day 1
+   - data.txt                # Your data for this puzzle
+   - part-a.sample-data.txt  # Empty file where you can place the sample data
+   - part-a.ts               # Typescript template to write your answer
 ```
 
-## Running the Puzzles
+## Save your sample data
 
-Copy and paste the sample data given in the problem into the `day-X-a.sample-data.txt` file.
+I recommend you first read the puzzle, grab the sample data generally presented as a code block and paste it into `part-a.sample-data.txt`.
 
-Copy and paste your larger unique actual data set into the `day-X-a.data.txt` file.
+There will also be an expected result that you will need to store in `part-a.ts`
 
-Add your solution to the `day-X-a.ts` file.
+## Write your answer
 
-To run your solution against your sample data set, run the following command:
+You can then write your answer in the generated template `part-a.ts` like so:
 
-```terminal
-nx day-1-a --data=sample
+```ts
+import Day from '../../day.ts';
+
+export default class Day1A extends Day {
+  constructor() {
+    super({
+      day: 1,
+      challenge: 'A',
+
+      sampleResult: '142', // DON'T FORGET TO ADD THE EXPECTED RESULT FOR THE SAMPLE DATA
+    });
+  }
+
+  async answer(input: string) {
+    const list = input.split('\n').map(value => parseInt(value));
+
+    return list.reduce((a, b) => a + b);
+  }
+}
 ```
 
-or
+## Test it
 
-```terminal
-npm run day-1-a:sample
+You can then test your answer using the following command:
+
+```shell
+npm run exec -- 1 A --sample
+
+# or
+
+npm run exec -- 1 A -s
 ```
 
-To run your solution against your actual data set, run the following command:
+This will run the code for Day 1 part 1 (internally called challenge A) against the sample data.
 
-```terminal
-nx day-1-a
+You will either know if you succeeded or failed on your quest.
+
+## Ship it
+
+Once you are happy with your result against sample data you can submit your answer by running the same command but against your input data:
+
+```shell
+npm run exec -- 1 A
 ```
 
-or
+This will run the code for Day 1 challenge A, against the input data, submit the answer and let you know if it's correct or not.
 
-```terminal
-npm run day-1-a
+If you want to test against input data without submitting your answer, you can use the following command
+
+```shell
+npm run exec -- 1 A --dont-submit
+
+# or
+
+npm run exec -- 1 A -n
+```
+
+Solving challenge A, will automatically update your `puzzle.md` and create a new `part-b.ts` for you to advance into the second part of the puzzle, also known as challenge B.
+
+## Typecheck and Formatting
+
+I left some commands for formatting and type checking with Prettier and Typescript respectively:
+
+``` shell
+# Formatting
+npm run format
+
+# Typecheck
+npm run check
 ```
