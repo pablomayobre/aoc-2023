@@ -102,3 +102,7 @@ npm run format
 # Typecheck
 npm run check
 ```
+
+## Configure the year
+
+If you wanna do the challenge for a previous year, you just need to update the `YEAR` constant in `./wrapper.ts` around line 6.
