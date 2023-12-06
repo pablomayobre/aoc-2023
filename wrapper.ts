@@ -40,7 +40,7 @@ export default class Day${day}${challenge} extends Day {
 
 export async function downloadData(day: number, challenge: 'A' | 'B') {
   console.log(
-    `Download and create files for day ${day} (challenge ${challenge})`,
+    `Creating files for day ${day} (challenge ${challenge})`,
   );
 
   const path = `./puzzles/day-${day}`;
@@ -67,17 +67,24 @@ export async function downloadData(day: number, challenge: 'A' | 'B') {
 
   // Remove puzzle and data
   if (await exists(`${path}/data.txt`)) {
-    console.log('Removing data', await rm(`${path}/data.txt`));
+    await rm(`${path}/data.txt`);
   }
 
   if (await exists(`${path}/puzzle.md`)) {
-    console.log('Removing puzzle', await rm(`${path}/puzzle.md`));
+    await rm(`${path}/puzzle.md`);
   }
+
+  console.log(
+    `Downloading puzzle and input data for day ${day} (challenge ${challenge})`,
+  );
 
   // Download puzzle and data from AOC
   await execute(
     `aoc download --year ${YEAR} --day ${day} --input-file ${path}/data.txt --puzzle-file ${path}/puzzle.md`,
   );
+
+  console.log("")
+  console.log(chalk.green.bold("Done ✅"))
 }
 
 export async function createChallengeDirectory(
@@ -109,15 +116,17 @@ export async function executeDay(
       dontSubmit,
     );
 
-    console.log("")
+    console.log('');
 
     if (!dontSubmit) {
       console.log(
         result
           ? chalk.green.bold(`✅  -  You have solved the challenge`)
-          : chalk.red.bold(`❎  -  That's not the right solution, try again${
-              useSampleData ? '' : ' in a couple minutes'
-            }`),
+          : chalk.red.bold(
+              `❎  -  That's not the right solution, try again${
+                useSampleData ? '' : ' in a couple minutes'
+              }`,
+            ),
       );
     }
 
