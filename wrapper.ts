@@ -2,6 +2,7 @@ import { mkdir, open, rm, stat, writeFile, readFile } from 'fs/promises';
 import type Day from './day.ts';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import chalk from 'chalk';
 
 export const YEAR = 2023;
 
@@ -108,13 +109,15 @@ export async function executeDay(
       dontSubmit,
     );
 
+    console.log("")
+
     if (!dontSubmit) {
       console.log(
         result
-          ? `You have solved the challenge`
-          : `That's not the right solution, try again${
+          ? chalk.green.bold(`✅  -  You have solved the challenge`)
+          : chalk.red.bold(`❎  -  That's not the right solution, try again${
               useSampleData ? '' : ' in a couple minutes'
-            }`,
+            }`),
       );
     }
 
