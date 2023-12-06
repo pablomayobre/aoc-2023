@@ -35,13 +35,12 @@ export default class Day${day}${challenge} extends Day {
     // Return your result
     return 0; 
   }
-}`;
+}
+`;
 }
 
 export async function downloadData(day: number, challenge: 'A' | 'B') {
-  console.log(
-    `Creating files for day ${day} (challenge ${challenge})`,
-  );
+  console.log(`Creating files for day ${day} (challenge ${challenge})`);
 
   const path = `./puzzles/day-${day}`;
 
@@ -54,25 +53,27 @@ export async function downloadData(day: number, challenge: 'A' | 'B') {
   }
 
   // Sample data
-  if (challenge === 'B' && (await exists(`${path}/part-a.sample-data.txt`))) {
+  if (await exists(`${path}/part-${challenge.toLowerCase()}.sample-data.txt`)) {
+    console.log('Sample data already exists. Skipping.');
+  } else if (
+    challenge === 'B' &&
+    (await exists(`${path}/part-a.sample-data.txt`))
+  ) {
+    // Copy over sample data from challenge "A", sometimes it doesn't match though so we keep them separate
     await writeFile(
       `${path}/part-${challenge.toLowerCase()}.sample-data.txt`,
       await readFile(`${path}/part-a.sample-data.txt`),
     );
   } else {
+    // Touch the file
     await (
       await open(`${path}/part-${challenge.toLowerCase()}.sample-data.txt`, 'a')
     ).close();
   }
 
   // Remove puzzle and data
-  if (await exists(`${path}/data.txt`)) {
-    await rm(`${path}/data.txt`);
-  }
-
-  if (await exists(`${path}/puzzle.md`)) {
-    await rm(`${path}/puzzle.md`);
-  }
+  await rm(`${path}/data.txt`, { force: true });
+  await rm(`${path}/puzzle.md`, { force: true });
 
   console.log(
     `Downloading puzzle and input data for day ${day} (challenge ${challenge})`,
@@ -83,8 +84,8 @@ export async function downloadData(day: number, challenge: 'A' | 'B') {
     `aoc download --year ${YEAR} --day ${day} --input-file ${path}/data.txt --puzzle-file ${path}/puzzle.md`,
   );
 
-  console.log("")
-  console.log(chalk.green.bold("Done ✅"))
+  console.log('');
+  console.log(chalk.green.bold('Done ✅'));
 }
 
 export async function createChallengeDirectory(
@@ -102,36 +103,90 @@ export async function executeDay(
   useSampleData?: boolean,
   dontSubmit?: boolean,
 ) {
-  const path = `./puzzles/day-${dayNumber}/part-${challenge.toLowerCase()}.ts`;
+  const path = `./puzzles/day-${dayNumber}`;
+  const dayFile = `${path}/part-${challenge.toLowerCase()}.ts`;
 
-  if (await exists(path)) {
-    const { default: day } = (await import(path)) as {
+  if (await exists(dayFile)) {
+    const { default: day } = (await import(dayFile)) as {
       default: { new (): Day };
     };
 
     const instance = new day();
 
-    const result = await instance.exec(
-      useSampleData ? 'sample' : 'challenge',
-      dontSubmit,
-    );
+    const fileName = useSampleData
+      ? `part-${challenge.toLowerCase()}.sample-data`
+      : 'data';
+    const file = (await readFile(`${path}/${fileName}.txt`)).toString();
+
+    const { result, time } = await instance.exec(file);
+
+    console.log(chalk.bold(`Your answer was: ${chalk.inverse(` ${result} `)}`));
+    console.log(`Execution time: ${time}ms`);
+
+    if (dontSubmit) {
+      return;
+    }
+
+    let passed = false;
+    if (useSampleData) {
+      if (instance.sampleResult === '') {
+        throw new Error(
+          "Don't forget to pass a sampleResult to the super() constructor. You should be able to find the value in your puzzle description.",
+        );
+      }
+
+      passed = instance.sampleResult === result.toString();
+    } else {
+      passed = await submitAnswer(result.toString(), dayNumber, challenge);
+    }
 
     console.log('');
 
-    if (!dontSubmit) {
-      console.log(
-        result
-          ? chalk.green.bold(`✅  -  You have solved the challenge`)
-          : chalk.red.bold(
-              `❎  -  That's not the right solution, try again${
-                useSampleData ? '' : ' in a couple minutes'
-              }`,
-            ),
+    console.log(
+      passed
+        ? chalk.green.bold(`✅  -  You have solved the challenge`)
+        : chalk.red.bold(
+            `❎  -  That's not the right solution, try again${
+              useSampleData ? '' : ' in a couple minutes'
+            }`,
+          ),
+    );
+
+    if (passed && challenge === 'A' && !useSampleData) {
+      await downloadData(dayNumber, 'B');
+    } else if (passed && challenge === 'B' && !useSampleData) {
+      await rm(`${path}/puzzle.md`, { force: true });
+
+      // Download puzzle again just to have the answer saved to file
+      await execute(
+        `aoc download --year ${YEAR} --day ${dayNumber} --puzzle-only --puzzle-file ${path}/puzzle.md`,
       );
     }
-
-    if (result && challenge === 'A' && !useSampleData) {
-      await downloadData(dayNumber, 'B');
-    }
   }
+}
+
+export function submitAnswer(
+  result: string,
+  day: number,
+  challenge: 'A' | 'B',
+) {
+  return new Promise<boolean>((resolve, reject) =>
+    exec(
+      `aoc submit ${challenge === 'A' ? 1 : 2} ${result} -y ${YEAR} -d ${day}`,
+      (error, stdout, stderr) => {
+        if (error) {
+          return reject(error);
+        }
+
+        const message = stdout.trim().toLowerCase();
+        if (message.startsWith("that's not the right answer")) {
+          return resolve(false);
+        }
+        if (message.startsWith("that's the right answer!")) {
+          return resolve(true);
+        }
+        return reject(new Error(`Unknown message from AOC:\n${message}`));
+      },
+    ),
+  );
 }
