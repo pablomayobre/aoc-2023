@@ -116,6 +116,16 @@ export async function executeDay(
     const fileName = useSampleData
       ? `part-${challenge.toLowerCase()}.sample-data`
       : 'data';
+
+    if (! await exists(`${path}/${fileName}.txt`)) {
+      await downloadData(dayNumber, challenge)
+      
+      if (useSampleData) {
+        console.log("You will need to fill in your sample data before executing this challenge.")
+        return;
+      }
+    }
+
     const file = (await readFile(`${path}/${fileName}.txt`)).toString();
 
     const { result, time } = await instance.exec(file);
@@ -162,6 +172,11 @@ export async function executeDay(
         `aoc download --year ${YEAR} --day ${dayNumber} --puzzle-only --puzzle-file ${path}/puzzle.md`,
       );
     }
+  } else {
+    await downloadData(dayNumber, challenge)
+      
+    console.log("The day you tried to execute didn't exist so we created it for you.")
+    console.log("Fill your answer and execute it once more.")
   }
 }
 
