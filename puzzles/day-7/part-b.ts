@@ -2,7 +2,6 @@ import Day from '../../day.ts';
 import {
   Hand,
   countCards,
-  debugHand,
   getBidResult,
   getNextType,
 } from './part-a.ts';
@@ -24,22 +23,41 @@ const cardMap = [
   'A',
 ];
 
-function getHandType(hand: number[]) {
-  const counts = countCards(hand);
+const joker = 1
 
-  let jokers = counts.get(1) ?? 0;
+function findHighestCard (counts: Map<number, number>) {
+  let max = [-1, -1] as [number, number];
 
-  if (jokers !== 5) {
-    counts.delete(1);
-  } else {
-    jokers = 0;
+  for (const entry of counts.entries()) {
+    if (entry[1] >= 2) return entry;
+
+    if (entry[1] > max[1]) max = entry;
   }
 
-  const sortedCounts = Array.from(counts.values()).sort((a, b) => b - a);
-  sortedCounts[0] += jokers;
+  return max;
+}
+
+function addWildcards(counts: Map<number, number>) {
+  let wildcards = counts.get(joker) ?? 0;
+
+  if (wildcards > 0 && wildcards !== 5) {
+    counts.delete(joker);
+
+    const maxCard = findHighestCard(counts)
+
+    counts.set(maxCard[0], maxCard[1] + wildcards);
+  } else {
+    wildcards = 0;
+  }
+
+  return counts
+}
+
+function getHandType(hand: number[]) {
+  const counts = addWildcards(countCards(hand));
 
   let type: number = 0;
-  for (let value of sortedCounts) {
+  for (let value of counts.values()) {
     type = getNextType(value, type);
   }
 

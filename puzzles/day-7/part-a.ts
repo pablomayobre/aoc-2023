@@ -122,7 +122,6 @@ export default class Day7A extends Day {
       day: 7,
       challenge: 'A',
 
-      // The result of the algorithm using sample data
       sampleResult: '6440',
     });
   }
