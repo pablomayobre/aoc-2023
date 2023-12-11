@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
+    "exec-bun": "bun run ./index.ts exec",
+    "init-bun": "bun run ./index.ts init",
+    "help-bun": "bun run ./index.ts help",
     "exec": "tsx ./index.ts exec",
     "init": "tsx ./index.ts init",
     "help": "tsx ./index.ts help",
