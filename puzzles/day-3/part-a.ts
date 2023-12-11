@@ -1,13 +1,43 @@
 import Day from '../../day.ts';
-import { Quadtree, Rectangle } from '@timohausmann/quadtree-ts';
 
-export function getRanges(line: number, start: number, length: number) {
-  return new Rectangle({
-    y: line - 1,
-    x: start - 1,
-    width: length + 2,
-    height: 3,
-  });
+export type Symbol = {
+  line: number;
+  index: number;
+  symbol: string;
+  gear: number;
+  gearCount: number;
+};
+
+export function newSymbol(line: number, index: number, symbol: string) {
+  return {
+    line,
+    symbol,
+    index,
+    gear: 1,
+    gearCount: 0,
+  };
+}
+
+export function getStartAndEnd(value: RegExpMatchArray) {
+  const endCharacter = value.index + value[0].length + 1;
+  const startCharacter = value.index - 1;
+
+  return [startCharacter, endCharacter];
+}
+
+export function splitPartsLines(input: string) {
+  const lines = input
+    .trim()
+    .split('\n')
+    .map((value) => value.trim());
+
+  lines.push('', '', '');
+
+  return lines;
+}
+
+export function getAllNumbers(lines: string[], lineNumber: number) {
+  return [...lines[lineNumber - 1].matchAll(/\d+/g)];
 }
 
 export default class Day3A extends Day {
@@ -21,61 +51,46 @@ export default class Day3A extends Day {
   }
 
   async answer(input: string) {
-    const lines = input
-      .trim()
-      .split('\n')
-      .map((value) => value.trim());
+    const lines = splitPartsLines(input);
+    const symbols: Map<number, Symbol>[] = [];
+    let count = 0;
 
-    const maxLength = Math.max(...lines.map((value) => value.length));
-
-    const tree = new Quadtree<Rectangle<{ character: string }>>({
-      width: maxLength,
-      height: lines.length,
-      maxObjects: 4,
-    });
-
-    const objects = [];
-
+    console.time();
     lines.forEach((line, lineNumber) => {
-      [...line.matchAll(/[^\d\.]/g)].forEach((value) => {
-        const symbol = new Rectangle({
-          width: 0.1,
-          height: 0.1,
-          x: value.index,
-          y: lineNumber,
-          data: { character: value[0] },
-        });
+      const currentLine: Map<number, Symbol> = new Map();
+      const symbolRegex = /[^\d\.]/g; // This is different for challenge A and B
 
-        objects.push(symbol);
-        tree.insert(symbol);
+      [...line.matchAll(symbolRegex)].forEach((value) => {
+        currentLine.set(
+          value.index,
+          newSymbol(lineNumber, value.index, value[0]),
+        );
       });
-    });
 
-    let numbers = [];
+      symbols.push(currentLine);
 
-    lines.forEach((line, lineNumber) => {
-      let re = /\d+/g;
-      let match;
-      while ((match = re.exec(line)) != null) {
-        const range = getRanges(lineNumber, match.index, match[0].length);
+      if (lineNumber > 0) {
+        getAllNumbers(lines, lineNumber).forEach((value) => {
+          const [startCharacter, endCharacter] = getStartAndEnd(value);
 
-        const symbols = tree.retrieve(range);
-        const hasSymbol = symbols.filter((rec) => {
-          const { x, y, data } = rec;
-          return (
-            x >= range.x &&
-            y >= range.y &&
-            x < range.x + range.width &&
-            y < range.y + range.height
-          );
+          for (let i = startCharacter; i < endCharacter; i++) {
+            const found = symbols.find((map) => {
+              if (map.has(i)) {
+                count += parseInt(value[0]);
+                return true;
+              }
+              return false;
+            });
+            if (found) break;
+          }
         });
+      }
 
-        if (hasSymbol.length > 0) {
-          numbers.push(parseInt(match[0]));
-        }
+      if (lineNumber > 1) {
+        symbols.shift();
       }
     });
 
-    return numbers.reduce((a, b) => a + b);
+    return count;
   }
 }

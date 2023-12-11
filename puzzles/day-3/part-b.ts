@@ -1,6 +1,11 @@
 import Day from '../../day.ts';
-import { getRanges } from './part-a.ts';
-import { Quadtree, Rectangle } from '@timohausmann/quadtree-ts';
+import {
+  getAllNumbers,
+  getStartAndEnd,
+  newSymbol,
+  splitPartsLines,
+  Symbol,
+} from './part-a.ts';
 
 export default class Day3B extends Day {
   constructor() {
@@ -13,70 +18,48 @@ export default class Day3B extends Day {
   }
 
   async answer(input: string) {
-    const lines = input
-      .trim()
-      .split('\n')
-      .map((value) => value.trim());
-
-    const maxLength = Math.max(...lines.map((value) => value.length));
-
-    const tree = new Quadtree<Rectangle<{ character: string }>>({
-      width: maxLength,
-      height: lines.length,
-      maxObjects: 4,
-    });
-
-    const objects = [];
+    const lines = splitPartsLines(input);
+    const symbols: Map<number, Symbol>[] = [];
+    let gear = 0;
 
     lines.forEach((line, lineNumber) => {
-      [...line.matchAll(/[^\d\.]/g)].forEach((value) => {
-        const symbol = new Rectangle({
-          width: 0.1,
-          height: 0.1,
-          x: value.index,
-          y: lineNumber,
-          data: { character: value[0] },
-        });
+      const currentLine: Map<number, Symbol> = new Map();
+      const symbolRegex = /\*/g; // This is different for challenge A and B
 
-        objects.push(symbol);
-        tree.insert(symbol);
+      [...line.matchAll(symbolRegex)].forEach((value) => {
+        currentLine.set(
+          value.index,
+          newSymbol(lineNumber, value.index, value[0]),
+        );
       });
-    });
 
-    let gears = new Map<string, number[]>();
+      symbols.push(currentLine);
 
-    lines.forEach((line, lineNumber) => {
-      let re = /\d+/g;
-      let match;
-      while ((match = re.exec(line)) != null) {
-        const range = getRanges(lineNumber, match.index, match[0].length);
+      if (lineNumber > 0) {
+        getAllNumbers(lines, lineNumber).forEach((value) => {
+          const [startCharacter, endCharacter] = getStartAndEnd(value);
 
-        const symbols = tree.retrieve(range);
-        const hasSymbol = symbols.filter((rec) => {
-          const { x, y, data } = rec;
-          return (
-            x >= range.x &&
-            y >= range.y &&
-            x < range.x + range.width &&
-            y < range.y + range.height
-          );
+          for (let i = startCharacter; i < endCharacter; i++) {
+            symbols.forEach((map) => {
+              const symbol = map.get(i);
+              if (symbol) {
+                symbol.gearCount++;
+                symbol.gear *= parseInt(value[0]);
+              }
+            });
+          }
         });
+      }
 
-        hasSymbol.forEach((symbol) => {
-          const identifier = `${symbol.data.character}.${symbol.x}-${symbol.y}`;
-          const gear = gears.get(identifier) ?? [];
-
-          gear.push(parseInt(match[0]));
-
-          gears.set(identifier, gear);
-        });
+      if (lineNumber > 1) {
+        const done = symbols.shift();
+        gear += Array.from(done.values()).reduce(
+          (prev, symbol) => prev + (symbol.gearCount <= 1 ? 0 : symbol.gear),
+          0,
+        );
       }
     });
 
-    return [...gears.values()]
-      .map((values) =>
-        values.length > 1 ? values.reduce((prev, curr) => prev * curr, 1) : 0,
-      )
-      .reduce((a, b) => a + b);
+    return gear;
   }
 }
