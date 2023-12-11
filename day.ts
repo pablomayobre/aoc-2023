@@ -19,21 +19,11 @@ export default class Day {
   }
 
   async exec(file: string) {
-    performance.mark('execution start');
+    const start = performance.now();
     const result = await this.answer(file);
-    performance.mark('execution end');
+    const end = performance.now();
 
-    const time = performance.measure(
-      'execution time',
-      'execution start',
-      'execution end',
-    ).duration;
-
-    performance.clearMarks('execution start');
-    performance.clearMarks('execution end');
-    performance.clearMeasures('execution time');
-
-    return { result, time };
+    return { result, time: end - start };
   }
 
   async answer(input: string): Promise<string | number> {
