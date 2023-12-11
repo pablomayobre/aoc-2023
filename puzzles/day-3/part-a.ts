@@ -78,7 +78,6 @@ export default class Day3A extends Day {
       }
     });
 
-    // Write your code here
-    return numbers.reduce((a, b) => a + b); // Return your result
+    return numbers.reduce((a, b) => a + b);
   }
 }

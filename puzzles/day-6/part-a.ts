@@ -51,21 +51,17 @@ export default class Day6A extends Day {
       day: 6,
       challenge: "A",
       
-      // The result of the algorithm using sample data
       sampleResult: "288" 
     })
   }
 
   async answer(input: string) {
-    // Write your code here
     const [timesLine, recordsLine] = input.split("\n")
 
     const races = parseRaces(timesLine, recordsLine)
 
     const options = races.map(({time, record}) => getOptimizedOptions(time, record))
 
-
-    // Return your result
     return options.reduce((prev, curr) => prev * curr, 1); 
   }
 }

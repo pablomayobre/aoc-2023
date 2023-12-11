@@ -30,8 +30,6 @@ export default class Day2A extends Day {
   }
 
   async answer(input: string) {
-    // Write your code here
-
     const games = input
       .trim()
       .split('\n')
@@ -54,6 +52,6 @@ export default class Day2A extends Day {
       })
       .reduce((prev, curr) => prev + curr.game, 0);
 
-    return value; // Return your result
+    return value;
   }
 }

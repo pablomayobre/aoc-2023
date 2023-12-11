@@ -47,7 +47,6 @@ export default class Day4A extends Day {
       return 2 ** power;
     });
 
-    // Write your code here
-    return wins.reduce((a, b) => a + b); // Return your result
+    return wins.reduce((a, b) => a + b);
   }
 }

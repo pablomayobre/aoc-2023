@@ -126,7 +126,6 @@ export default class Day5A extends Day {
       type = conversion.to;
     }
 
-    // Write your code here
-    return Math.min(...values); // Return your result
+    return Math.min(...values);
   }
 }

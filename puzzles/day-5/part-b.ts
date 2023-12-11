@@ -113,7 +113,6 @@ export default class Day5B extends Day {
         }
       });
 
-    // Write your code here
-    return minLocation; // Return your result
+    return minLocation;
   }
 }
