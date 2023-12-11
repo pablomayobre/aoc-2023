@@ -1,5 +1,5 @@
 import Day from '../../day.ts';
-import { convert, getRange, parseRangeMap, Range } from './part-a.ts';
+import { getRange, parseRangeMap, Range } from './part-a.ts';
 
 function isIntersecting(
   leftStart: number,
