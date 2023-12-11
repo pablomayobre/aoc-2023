@@ -1,5 +1,6 @@
 import Day from '../../day.ts';
-import { getRanges, symbolsInRange } from './part-a.ts';
+import { getRanges } from './part-a.ts';
+import { Quadtree, Rectangle } from '@timohausmann/quadtree-ts';
 
 export default class Day3B extends Day {
   constructor() {
@@ -19,38 +20,56 @@ export default class Day3B extends Day {
 
     const maxLength = Math.max(...lines.map((value) => value.length));
 
-    const symbolPositions = lines
-      .flatMap((line, lineNumber) => {
-        return [...line].map((value, index) =>
-          /\*/.test(value) ? index + lineNumber * maxLength : null,
-        );
-      })
-      .filter((value) => value !== null);
+    const tree = new Quadtree<Rectangle<{ character: string }>>({
+      width: maxLength,
+      height: lines.length,
+      maxObjects: 4,
+    });
 
-    let gears = new Map<number, number[]>();
+    const objects = [];
+
+    lines.forEach((line, lineNumber) => {
+      [...line.matchAll(/[^\d\.]/g)].forEach((value) => {
+        const symbol = new Rectangle({
+          width: 0.1,
+          height: 0.1,
+          x: value.index,
+          y: lineNumber,
+          data: { character: value[0] },
+        });
+
+        objects.push(symbol);
+        tree.insert(symbol);
+      });
+    });
+
+    let gears = new Map<string, number[]>();
 
     lines.forEach((line, lineNumber) => {
       let re = /\d+/g;
       let match;
       while ((match = re.exec(line)) != null) {
-        const ranges = getRanges(
-          maxLength,
-          lineNumber,
-          match.index,
-          match[0].length,
-        );
+        const range = getRanges(lineNumber, match.index, match[0].length);
 
-        const symbols = ranges
-          .flatMap((range) => {
-            return symbolsInRange(symbolPositions, ...range);
-          })
-          .forEach((symbol) => {
-            const gear = gears.get(symbol) ?? [];
+        const symbols = tree.retrieve(range);
+        const hasSymbol = symbols.filter((rec) => {
+          const { x, y, data } = rec;
+          return (
+            x >= range.x &&
+            y >= range.y &&
+            x < range.x + range.width &&
+            y < range.y + range.height
+          );
+        });
 
-            gear.push(parseInt(match[0]));
+        hasSymbol.forEach((symbol) => {
+          const identifier = `${symbol.data.character}.${symbol.x}-${symbol.y}`;
+          const gear = gears.get(identifier) ?? [];
 
-            gears.set(symbol, gear);
-          });
+          gear.push(parseInt(match[0]));
+
+          gears.set(identifier, gear);
+        });
       }
     });
 
@@ -58,6 +77,6 @@ export default class Day3B extends Day {
       .map((values) =>
         values.length > 1 ? values.reduce((prev, curr) => prev * curr, 1) : 0,
       )
-      .reduce((a, b) => a + b); // Return your result
+      .reduce((a, b) => a + b);
   }
 }

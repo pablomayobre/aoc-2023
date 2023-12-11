@@ -1,34 +1,13 @@
 import Day from '../../day.ts';
+import { Quadtree, Rectangle } from '@timohausmann/quadtree-ts';
 
-export function symbolsInRange(symbols: number[], start: number, end: number) {
-  return symbols.filter((number) => number >= start && number <= end);
-}
-
-export function getRanges(
-  maxLineLength: number,
-  line: number,
-  start: number,
-  length: number,
-) {
-  const ranges: (readonly [number, number])[] = [];
-  const min = Math.max(start - 1, 0);
-  const max = Math.min(start + length, maxLineLength);
-
-  if (line > 1) {
-    const offset = (line - 1) * maxLineLength;
-    ranges.push([offset + min, offset + max] as const);
-  }
-  {
-    const offset = line * maxLineLength;
-    ranges.push([offset + min, offset + max] as const);
-  }
-
-  {
-    const offset = (line + 1) * maxLineLength;
-    ranges.push([offset + min, offset + max] as const);
-  }
-
-  return ranges;
+export function getRanges(line: number, start: number, length: number) {
+  return new Rectangle({
+    y: line - 1,
+    x: start - 1,
+    width: length + 2,
+    height: 3,
+  });
 }
 
 export default class Day3A extends Day {
@@ -49,13 +28,28 @@ export default class Day3A extends Day {
 
     const maxLength = Math.max(...lines.map((value) => value.length));
 
-    const symbolPositions = lines
-      .flatMap((line, lineNumber) => {
-        return [...line].map((value, index) =>
-          /[^\d\.]/.test(value) ? index + lineNumber * maxLength : null,
-        );
-      })
-      .filter((value) => value !== null);
+    const tree = new Quadtree<Rectangle<{ character: string }>>({
+      width: maxLength,
+      height: lines.length,
+      maxObjects: 4,
+    });
+
+    const objects = [];
+
+    lines.forEach((line, lineNumber) => {
+      [...line.matchAll(/[^\d\.]/g)].forEach((value) => {
+        const symbol = new Rectangle({
+          width: 0.1,
+          height: 0.1,
+          x: value.index,
+          y: lineNumber,
+          data: { character: value[0] },
+        });
+
+        objects.push(symbol);
+        tree.insert(symbol);
+      });
+    });
 
     let numbers = [];
 
@@ -63,18 +57,22 @@ export default class Day3A extends Day {
       let re = /\d+/g;
       let match;
       while ((match = re.exec(line)) != null) {
-        const ranges = getRanges(
-          maxLength,
-          lineNumber,
-          match.index,
-          match[0].length,
-        );
+        const range = getRanges(lineNumber, match.index, match[0].length);
 
-        const hasSymbol = ranges.find((range) => {
-          return symbolsInRange(symbolPositions, ...range).length > 0;
+        const symbols = tree.retrieve(range);
+        const hasSymbol = symbols.filter((rec) => {
+          const { x, y, data } = rec;
+          return (
+            x >= range.x &&
+            y >= range.y &&
+            x < range.x + range.width &&
+            y < range.y + range.height
+          );
         });
 
-        if (hasSymbol) numbers.push(parseInt(match[0]));
+        if (hasSymbol.length > 0) {
+          numbers.push(parseInt(match[0]));
+        }
       }
     });
 
