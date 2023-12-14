@@ -1,5 +1,5 @@
 import Day from '../../day.ts';
-import { canMatchCount } from './part-a.ts';
+import { canMatchCount, printCacheRatio } from './part-a.ts';
 
 export default class Day12B extends Day {
   constructor() {
@@ -29,13 +29,15 @@ export default class Day12B extends Day {
         };
       });
 
-    const mem = new Map<`${string} ${string}`, number>()
+    const mem = new Map<`${string} ${string}`, number>();
 
     const counts = start.map(({ springs, damaged }) => {
       const [count, memory] = canMatchCount(springs, damaged, mem);
 
       return { count, springs, damaged };
     });
+
+    printCacheRatio();
 
     // Return your result
     return counts.reduce((a, b) => a + b.count, 0);
